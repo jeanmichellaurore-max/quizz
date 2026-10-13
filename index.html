@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chache Wayòm nan - Kat Jeografik Espirityèl (Duolingo Style)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #1a1614;
+            color: #f3f4f6;
+            overflow-x: hidden;
+            user-select: none;
+        }
+        .title-font {
+            font-family: 'Cinzel', serif;
+        }
+        .map-bg {
+            background-color: #2b231d;
+            background-image: 
+                radial-gradient(#3e322a 15%, transparent 16%),
+                radial-gradient(#3e322a 15%, transparent 16%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(234, 179, 8, 0.8), 0 0 30px rgba(234, 179, 8, 0.4); }
+            50% { box-shadow: 0 0 25px rgba(234, 179, 8, 1), 0 0 45px rgba(234, 179, 8, 0.6); }
+        }
+        .active-node-glow {
+            animation: pulse-glow 2s infinite ease-in-out;
+        }
+        .node-btn {
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .node-btn:hover:not(.locked) {
+            transform: scale(1.15);
+        }
+        .node-btn:active:not(.locked) {
+            transform: scale(0.95);
+        }
+        @keyframes bounce-short {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .animate-bounce-short {
+            animation: bounce-short 0.5s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center pb-24">
+
+    <div id="login-screen" class="fixed inset-0 bg-stone-950 z-50 flex items-center justify-center p-4">
+        <div class="bg-stone-900 border border-amber-900/60 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center space-y-6">
+            <div class="text-6xl">🗺️</div>
+            <div>
+                <h2 class="text-2xl font-black title-font text-amber-400">Byenveni nan Wayòm nan</h2>
+                <p class="text-stone-400 text-xs mt-1">Antre non ou pou kòmanse vwayaj espirityèl ou a</p>
+            </div>
+            <div class="space-y-3 text-left">
+                <label class="text-xs font-bold text-amber-300">Non ou:</label>
+                <input type="text" id="username-input" placeholder="Egzanp: Jean Michel" class="w-full px-4 py-3 bg-stone-800 border border-stone-700 rounded-2xl text-stone-100 font-bold focus:outline-none focus:border-amber-500">
+            </div>
+            <button onclick="handleLogin()" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-stone-950 font-black rounded-2xl shadow-lg border-b-4 border-amber-700 active:border-b-0 active:translate-y-1 transition-all">
+                Kòmanse Vwayaj la 🚀
+            </button>
+        </div>
+    </div>
+
+    <header class="w-full max-w-md bg-stone-900/95 backdrop-blur border-b border-amber-900/40 sticky top-0 z-40 px-3 py-2 flex items-center justify-between shadow-xl">
+        <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-1 font-extrabold text-orange-400 text-xs">
+                <span>🔥</span>
+                <span id="streak-count">7</span>
+            </div>
+            <div class="flex items-center space-x-1 font-extrabold text-blue-400 text-xs">
+                <span>💎</span>
+                <span id="gems-count">150</span>
+            </div>
+            <div class="flex items-center space-x-1 font-extrabold text-amber-400 text-xs">
+                <span>⚡</span>
+                <span id="xp-count">240</span>
+            </div>
+            <div class="flex items-center space-x-0.5 text-red-500 text-xs font-extrabold tracking-wider cursor-pointer" onclick="openShopModal()" title="Achte Kè">
+                <span id="hearts-container">❤️❤️❤️</span>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2 bg-stone-800/80 border border-stone-700/60 px-2.5 py-1 rounded-xl">
+            <div class="text-right">
+                <p id="display-username" class="text-amber-300 font-black text-xs truncate max-w-[90px]">Itilizatè</p>
+            </div>
+            <button onclick="handleLogout()" title="Dekonekte (Log Out)" class="text-stone-400 hover:text-red-400 text-xs font-bold px-1.5 py-0.5 rounded bg-stone-900 border border-stone-700">
+                🚪
+            </button>
+        </div>
+    </header>
+
+    <div class="w-full max-w-md bg-gradient-to-b from-amber-950 to-stone-900 text-amber-100 px-6 py-5 shadow-lg border-b-2 border-amber-700/50 text-center relative overflow-hidden">
+        <div class="absolute -right-8 -bottom-8 opacity-10 text-9xl font-black title-font">🗺️</div>
+        <h1 class="text-2xl font-black tracking-widest title-font text-amber-400 drop-shadow">Chache Wayòm nan</h1>
+        <p class="text-amber-200/80 text-xs mt-1 font-semibold tracking-wide">Kat Vwayaj Espirityèl la — 100 Kesyon (Matye, Mak, Lik, Jan)</p>
+    </div>
+
+    <main class="w-full max-w-md px-4 py-6 flex flex-col items-center relative map-bg min-h-[1400px] shadow-2xl border-x border-amber-950">
+        <svg class="absolute top-0 left-0 w-full h-full pointer-events-none z-0" style="min-height: 1550px;" viewBox="0 0 400 1550" fill="none">
+            <path d="M 200 60 Q 320 180, 200 300 Q 80 420, 200 540 Q 320 660, 200 780 Q 80 900, 200 1020 Q 320 1140, 200 1260 Q 80 1380, 200 1500" stroke="#44352b" stroke-width="18" stroke-linecap="round" stroke-dasharray="10 10"/>
+        </svg>
+
+        <div class="w-full flex justify-center mb-4 z-10"><span class="bg-amber-900/80 border border-amber-600/50 text-amber-200 text-xs uppercase tracking-widest px-4 py-1.5 rounded-full font-black shadow-md backdrop-blur">🌲 Val Fonman (Nivo 1-3)</span></div>
+
+        <div class="w-full flex justify-center my-6 z-10">
+            <button onclick="openLesson(1)" class="node-btn active-node-glow relative w-20 h-20 rounded-2xl bg-amber-500 border-b-6 border-amber-700 shadow-2xl flex items-center justify-center text-stone-900 text-3xl font-black cursor-pointer group rotate-3">
+                <span class="group-hover:scale-110 transition-transform">📜</span>
+                <div class="absolute -bottom-9 bg-stone-900/90 border border-amber-500/40 text-amber-300 text-xs px-3 py-1 rounded-lg font-bold shadow-lg whitespace-nowrap">1. Premye Pas</div>
+            </button>
+        </div>
+
+        <div class="w-full flex justify-end pr-14 my-8 z-10">
+            <button onclick="openLesson(2)" class="node-btn relative w-20 h-20 rounded-2xl bg-emerald-600 border-b-6 border-emerald-800 shadow-xl flex items-center justify-center text-white text-3xl font-black cursor-pointer group -rotate-6">
+                <span class="group-hover:scale-110 transition-transform">⛰️</span>
+                <div class="absolute -bottom-9 bg-stone-900/90 border border-emerald-500/40 text-emerald-300 text-xs px-3 py-1 rounded-lg font-bold shadow-lg whitespace-nowrap">2. Mòn Lafwa</div>
+            </button>
+        </div>
+
+        <div class="w-full flex justify-start pl-14 my-8 z-10">
+            <button onclick="openLesson(3)" class="node-btn relative w-20 h-20 rounded-2xl bg-sky-600 border-b-6 border-sky-800 shadow-xl flex items-center justify-center text-white text-3xl font-black cursor-pointer group rotate-6">
+                <span class="group-hover:scale-110 transition-transform">💧</span>
+                <div class="absolute -bottom-9 bg-stone-900/90 border border-sky-500/40 text-sky-300 text-xs px-3 py-1 rounded-lg font-bold shadow-lg whitespace-nowrap">3. Rivyè Lavi</div>
+            </button>
+        </div>
+
+        <div class="w-full flex justify-center my-4 z-10"><span class="bg-amber-900/80 border border-amber-600/50 text-amber-200 text-xs uppercase tracking-widest px-4 py-1.5 rounded-full font-black shadow-md backdrop-blur">⚔️ Antre nan Batay la (Nivo 4-6)</span></div>
+
+        <div class="w-full flex justify-center my-8 z-10">
+            <button onclick="openLesson(4)" class="node-btn locked relative w-20 h-20 rounded-2xl bg-stone-800 border-b-6 border-stone-900 shadow-inner flex items-center justify-center text-stone-500 text-3xl font-black cursor-not-allowed -rotate-3">
+                <span>🛡️</span>
+                <div class="absolute -bottom-9 bg-stone-900/90 border border-stone-700 text-stone-400 text-xs px-3 py-1 rounded-lg font-bold shadow-lg whitespace-nowrap">4. Fòtèf la</div>
+            </button>
+        </div>
+
+        <div class="w-full flex justify-end pr-14 my-8 z-10">
+            <button onclick="openLesson(5)" class="node-btn locked relative w-20 h-20 rounded-2xl bg-stone-800 border-b-6 border-stone-900 shadow-inner flex items-center justify-center text-stone-500 text-3xl font-black cursor-not-allowed rotate-3">
+                <span>🔥</span>
+                <div class="absolute -bottom-9 bg-stone-900/90 border border-stone-700 text-stone-400 text-xs px-3 py-1 rounded-lg font-bold shadow-lg whitespace-nowrap">5. Dife Lespri</div>
+            </button>
+        </div>
+
+        <div class="w-full flex justify-start pl-14 my-8 z-10">
+            <button onclick="openLesson(6)" class="node-btn locked relative w-20 h-20 rounded-2xl bg-stone-800 border-b-6 border-stone-900 shadow-inner flex items-center justify-center text-stone-500 text-3xl font-black cursor-not-allowed -rotate-6">
+                <span>🌾</span>
+                <div class="absolute -bottom-9 bg-stone-900/90 border border-stone-700 text-stone-400 text-xs px-3 py-1 rounded-lg font-bold shadow-lg whitespace-nowrap">6. Rekòt la</div>
+            </button>
+        </div>
+
+        <div class="w-full flex justify-center my-4 z-10"><span class="bg-amber-900/80 border border-amber-600/50 text-amber-200 text-xs uppercase tracking-widest px-4 py-1.5 rounded-full font-black shadow-md backdrop-blur">👑 Peyi Wa a (Nivo 7-10)</span></div>
+
+        <div class="w-full flex justify-center my-8 z-10">
+            <button onclick="openLesson(7)" class="node-btn locked relative w-20 h-20 rounded-2xl bg-stone-800 border-b-6 border-stone-900 shadow-inner flex items-center justify-center text-stone-500 text-3xl font-black cursor-not-allowed rotate-3">
+                <span>🕊️</span>
+                <div class="absolute -bottom-9 bg-stone-900/90 border border-stone-700 text-stone-400 text-xs px-3 py-1 rounded-lg font-bold shadow-lg whitespace-nowrap">7. Kote Pèmanan</div>
+            </button>
+        </div>
+
+        <div class="w-full flex justify-end pr-14 my-8 z-10">
+            <button onclick="openLesson(8)" class="node-btn locked relative w-20 h-20 rounded-2xl bg-stone-800 border-b-6 border-stone-900 shadow-inner flex items-center justify-center text-stone-500 text-3xl font-black cursor-not-allowed -rotate-3">
+                <span>✨</span>
+                <div class="absolute -bottom-9 bg-stone-900/90 border border-stone-700 text-stone-400 text-xs px-3 py-1 rounded-lg font-bold shadow-lg whitespace-nowrap">8. Limyè Monn</div>
+            </button>
+        </div>
+
+        <div class="w-full flex justify-start pl-14 my-8 z-10">
+            <button onclick="openLesson(9)" class="node-btn locked relative w-20 h-20 rounded-2xl bg-stone-800 border-b-6 border-stone-900 shadow-inner flex items-center justify-center text-stone-500 text-3xl font-black cursor-not-allowed rotate-6">
+                <span>⚓</span>
+                <div class="absolute -bottom-9 bg-stone-900/90 border border-stone-700 text-stone-400 text-xs px-3 py-1 rounded-lg font-bold shadow-lg whitespace-nowrap">9. Ankè Lafwa</div>
+            </button>
+        </div>
+
+        <div class="w-full flex justify-center my-8 z-10">
+            <button onclick="openLesson(10)" class="node-btn locked relative w-20 h-20 rounded-2xl bg-stone-800 border-b-6 border-stone-900 shadow-inner flex items-center justify-center text-stone-500 text-3xl font-black cursor-not-allowed -rotate-6">
+                <span>👑</span>
+                <div class="absolute -bottom-9 bg-stone-900/90 border border-stone-700 text-stone-400 text-xs px-3 py-1 rounded-lg font-bold shadow-lg whitespace-nowrap">10. Gran Palè</div>
+            </button>
+        </div>
+    </main>
+
+    <div id="lesson-modal" class="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden transition-opacity">
+        <div id="modal-content" class="bg-stone-900 border border-amber-900/55 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl transform transition-transform translate-y-full sm:translate-y-0">
+            
+            <div class="flex justify-between items-center mb-4 border-b border-stone-800 pb-3">
+                <button onclick="returnToMenu()" id="back-menu-btn" class="text-amber-400 font-bold text-xs bg-amber-950/60 border border-amber-800/60 px-3 py-1.5 rounded-xl hover:bg-amber-900/60 transition-all flex items-center space-x-1 hidden">
+                    <span>← Retounen</span>
+                </button>
+                <h2 id="modal-title" class="text-lg font-black title-font text-amber-400">Leson</h2>
+                <button onclick="closeLesson()" class="text-stone-400 hover:text-white font-bold text-xl px-2">✕</button>
+            </div>
+
+            <div id="level-menu-screen" class="space-y-4 py-2">
+                <p class="text-stone-300 text-sm font-semibold text-center mb-4">Chwazi nivo difikilte ou vle pou leson sa a:</p>
+                <button onclick="selectDifficulty('fasil')" class="w-full py-3 px-4 bg-emerald-950/60 border border-emerald-600/50 hover:bg-emerald-900/60 text-emerald-300 font-black rounded-2xl shadow-md flex items-center justify-between transition-all">
+                    <span>🟢 Nivo Fasil</span>
+                    <span class="text-xs bg-emerald-800/60 px-2.5 py-1 rounded-lg">+20 XP</span>
+                </button>
+                <button onclick="selectDifficulty('difikil')" class="w-full py-3 px-4 bg-amber-950/60 border border-amber-600/50 hover:bg-amber-900/60 text-amber-300 font-black rounded-2xl shadow-md flex items-center justify-between transition-all">
+                    <span>🟡 Nivo Difikil</span>
+                    <span class="text-xs bg-amber-800/60 px-2.5 py-1 rounded-lg">+35 XP</span>
+                </button>
+                <button onclick="selectDifficulty('jeni')" class="w-full py-3 px-4 bg-red-950/60 border border-red-600/50 hover:bg-red-900/60 text-red-300 font-black rounded-2xl shadow-md flex items-center justify-between transition-all">
+                    <span>🔴 Nivo Jeni</span>
+                    <span class="text-xs bg-red-800/60 px-2.5 py-1 rounded-lg">+50 XP</span>
+                </button>
+            </div>
+
+            <div id="quiz-container" class="space-y-4 hidden">
+                <div class="flex justify-between items-center text-xs font-bold text-amber-300/80 mb-1">
+                    <span id="diff-badge" class="uppercase bg-amber-950 border border-amber-600/40 px-2 py-0.5 rounded">Fasil</span>
+                    <span id="quiz-counter" class="text-stone-400">Kesyon 1/10</span>
+                </div>
+                <p id="quiz-question" class="text-stone-300 font-bold text-base">Kesyon an ap parèt la...</p>
+                
+                <div id="options-list" class="space-y-3"></div>
+            </div>
+
+            <div id="result-feedback" class="mt-6 hidden pt-4 border-t border-stone-800">
+                <div id="feedback-card" class="p-4 rounded-2xl mb-4 flex items-center space-x-3">
+                    <div id="feedback-icon" class="text-3xl">🎉</div>
+                    <div>
+                        <p id="feedback-title" class="font-black text-base"></p>
+                        <p id="feedback-text" class="text-xs font-bold mt-0.5 opacity-90"></p>
+                    </div>
+                </div>
+                <button onclick="nextQuestionStep()" id="next-q-btn" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-stone-950 font-black rounded-2xl shadow-lg border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1 transition-all">
+                    Kontinye →
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="shop-modal" class="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-stone-900 border border-amber-900/55 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center space-y-4">
+            <div class="text-5xl">❤️</div>
+            <h3 class="text-xl font-black title-font text-red-400">Boutik Kè</h3>
+            <p class="text-stone-300 text-xs">Ou ka achte kè pou ou kontinye jwe lè w fè erè!</p>
+            <div class="bg-stone-800/80 p-4 rounded-2xl border border-stone-700 flex justify-between items-center">
+                <div class="text-left">
+                    <p class="font-black text-amber-200 text-sm">Ranpli tout Kè yo (3 Kè)</p>
+                    <p class="text-blue-400 text-xs font-bold">Pri: 50 💎</p>
+                </div>
+                <button onclick="buyHearts()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs rounded-xl shadow-md">
+                    Achte
+                </button>
+            </div>
+            <button onclick="closeShopModal()" class="w-full py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold rounded-xl text-xs">
+                Fèmen
+            </button>
+        </div>
+    </div>
+
+    <nav class="w-full max-w-md fixed bottom-0 bg-stone-900/95 backdrop-blur border-t border-amber-900/40 py-3 px-6 flex justify-around items-center z-40 shadow-2xl">
+        <button class="flex flex-col items-center text-amber-400 font-black text-xs space-y-1">
+            <span class="text-2xl">🗺️</span>
+            <span>Kat</span>
+        </button>
+        <button onclick="showToast('📜 Pawòl: Medite sou chak vèsè chak jou!')" class="flex flex-col items-center text-stone-400 hover:text-stone-200 font-black text-xs space-y-1">
+            <span class="text-2xl">📜</span>
+            <span>Pawòl</span>
+        </button>
+        <button onclick="openShopModal()" class="flex flex-col items-center text-stone-400 hover:text-stone-200 font-black text-xs space-y-1">
+            <span class="text-2xl">🛡️</span>
+            <span>Boutik</span>
+        </button>
+    </nav>
+
+    <script>
+        let currentXP = 240;
+        let currentGems = 150;
+        let currentHearts = 3;
+        let currentStreak = 7;
+        let activeNodeId = 1;
+        let selectedDiff = 'fasil';
+        let currentQuestionIdx = 0;
+        let maxUnlockedNode = 1;
+        let currentUsername = "Itilizatè";
+
+        // Duolingo encouragement phrases with user name interpolation
+        const duoEncouragements = [
+            (name) => ({ icon: "🔥", title: `Ekselan travay, ${name}!`, text: "Fòs ou ak detèminasyon ou nan Wayòm nan parèt klè!" }),
+            (name) => ({ icon: "✨", title: `Bèl repons, ${name}!`, text: "Ou ap konprann verite yo avèk anpil presizyon." }),
+            (name) => ({ icon: "🎯", title: `M ap salye ou, ${name}!`, text: "Kontinye konsa, w ap pwoche bò palè a!" }),
+            (name) => ({ icon: "🌟", title: `Ou gen fòs, ${name}!`, text: "Pawòl la ap rasinye anndan kè ou." })
+        ];
+
+        const duoMistakes = [
+            (name) => ({ icon: "💡", title: `Pa dekouraje, ${name}!`, text: "Se konsa aprantisaj la ye. Gade byen vèsè a pou pwochen an." }),
+            (name) => ({ icon: "🛡️", title: `Eseye ankò, ${name}!`, text: "Chak erè se yon aprantisaj pou ranfòse lafwa ou." })
+        ];
+
+        // 100 Kesyon total divize an 10 leson (10 kesyon chak) ki soti nan 4 evanjil yo
+        const lessonsData = {
+            1: {
+                title: "Leson 1: Premye Pas nan Val la",
+                questions: [
+                    { q: "Kisa ki dwe vini an premye nan lavi yon kwayan dapre Matye 6:33?", opts: ["Richès ak bèl kay sou latè", "Wayòm Bondye a ak jistis li", "Tout sousi ak enkyetid chak jou"], correct: 1 },
+                    { q: "Kijan Jezi te kòmanse preche nan Mak 1:15?", opts: ["Repanti epi kwè nan bòn nouvèl la", "Rete tann yon lòt epòk", "Bati yon gwo tanp"], correct: 0 },
+                    { q: "Kisa Lik 17:21 di sou kote Wayòm Bondye a ye?", opts: ["Wayòm nan nan mitan nou / anndan nou", "Wayòm nan nan yon lòt peyi", "Wayòm nan se yon gwo palè"], correct: 0 },
+                    { q: "Kisa Jan 3:3 di yon moun dwe fè pou l wè Wayòm nan?", opts: ["Fòk yon moun fèt a nouvo", "Fòk yon moun fè gwo etid", "Fòk yon moun rich"], correct: 0 },
+                    { q: "Nan Matye 13:44, kisa moun ki jwenn trezò a fè?", opts: ["Li kache l pou kont li", "Li vann tout sa l genyen ak lajwa pou l achte l", "Li bay li bay zanmi l"], correct: 1 },
+                    { q: "Kisa Lik 9:62 di sou moun k ap gade dèyè nan travay la?", opts: ["Li bon pou Wayòm nan", "Li pa bon pou Wayòm Bondye a", "Li pral jwenn richès"], correct: 1 },
+                    { q: "Kisa Matye 5:10 deklare sou moun ki pèsekite pou jistis?", opts: ["Wayòm syèl la se pou yo", "Y ap pèdi tout bagay", "Y ap viv nan lapè total sou tè a"], correct: 0 },
+                    { q: "Kisa Jan 18:36 di sou Wayòm Jezi a?", opts: ["Wayòm mwen an pa soti nan monn sa a", "Wayòm mwen an se yon anpi politik", "Wayòm mwen an baze sou lame"], correct: 0 },
+                    { q: "Kisa Lik 12:31 mande pou n fè anvan pou lòt bagay yo vin jwenn nou?", opts: ["Chache Wayòm li an an premye", "Travay san rete pou kò nou", "Chache sekirite nan lajan"], correct: 0 },
+                    { q: "Kijan Mak 10:15 di nou dwe resevwa Wayòm nan?", opts: ["Tankou yon timoun piti", "Avèk gwo fòs entelektyèl", "Avèk anpil otorite"], correct: 0 }
+                ]
+            },
+            2: {
+                title: "Leson 2: Mòn Lafwa",
+                questions: [
+                    { q: "Nan Matye 17:20, ki gwosè lafwa ki nesesè pou deplase mòn?", opts: ["Tankou yon grenn moutad", "Gwo kou yon mòn", "Ti kras tankou sab"], correct: 0 },
+                    { q: "Kisa Mak 11:24 di sou lè n ap lapriyè nan lafwa?", opts: ["Kwè nou resevwa l deja, epi n ap jwenn li", "Mande san nou pa kwè", "Tann yon mirak vizib anvan"], correct: 0 },
+                    { q: "Kijan Lik 18:1 ankouraje nou nan lapriyè?", opts: ["Lapriyè toujou san nou pa dekouraje", "Lapriyè sèlman nan maten", "Lapriyè lè nou an danje"], correct: 0 },
+                    { q: "Kisa Jan 14:13 di sou non Jezi nan lapriyè?", opts: ["Nenpòt kisa n ap mande nan non l, l ap fè l", "Nou dwe mande sèlman lajan", "Nou pa ka mande anyen dirèk"], correct: 0 },
+                    { q: "Kisa Matye 21:22 di sou tou sa n mande nan lapriyè avèk lafwa?", opts: ["N ap resevwa l", "L ap pran tan anpil", "Se yon pwomès pou moun ansyen sèlman"], correct: 0 },
+                    { q: "Nan Mak 9:23, kisa Jezi di sou moun ki gen lafwa?", opts: ["Tout bagay posib pou moun ki kwè", "Son sèlman pou kèk moun", "Lafwa pa jwe wòl nan lavi"], correct: 0 },
+                    { q: "Kisa Lik 17:6 di lafwa ki piti kon yon grenn moutad ka fè ak yon pye sikomò?", opts: ["Rache l rasin rasin epi plante l nan lanmè", "Fè l bay fwi dous", "Koupe l an mwatye"], correct: 0 },
+                    { q: "Kisa Jan 15:7 di sou rezilta rete nan pawòl Jezi a?", opts: ["Mande sa nou vle, l ap fò pou nou", "N ap vin rich nan monn sa a", "N ap jwenn gwo pozisyon politik"], correct: 0 },
+                    { q: "Kisa Matye 8:13 di ki te fè sèvant ofisye a geri?", opts: ["Daprè lafwa ou, se pou l konsa pou ou", "Gras a medikaman epòk la", "Paske li te bay anpil lajan"], correct: 0 },
+                    { q: "Kisa Mak 5:34 di Jezi ak madanm ki te touche rad li a?", opts: ["Lafwa ou geri ou, ale ak lapè", "Se chans ki te ede ou", "Pa retounen kote m ankò"], correct: 0 }
+                ]
+            },
+            3: {
+                title: "Leson 3: Rivyè Lavi",
+                questions: [
+                    { q: "Kisa Jan 4:14 di sou dlo Jezi bay la?", opts: ["Ap tounen yon sous dlo k ap koule pou lavi etènèl", "Ap sèvi pou yon jou sèlman", "Ap fè kò a pa janm mouri sou tè a"], correct: 0 },
+                    { q: "Nan Jan 7:38, kisa ki pral koule nan vant moun ki kwè nan li?", opts: ["Rivyè dlo vivan", "Dlo richès materyèl", "Gwo lajwa pasajè"], correct: 0 },
+                    { q: "Kisa Matye 5:6 di sou moun ki grangou ak swaf jistis?", opts: ["Y ap janbe soufrans", "Y ap rejte nèt", "Y ap jwenn kontantman (rasi)"], correct: 2 },
+                    { q: "Kisa Lik 6:21 di sou moun ki grangou kounye a?", opts: ["Y ap vin rich", "Y ap rasize", "Y ap kriye pou tout tan"], correct: 1 },
+                    { q: "Nan Matye 4:4, ki kote lavi moun soti dapre pawòl la?", opts: ["Soti nan chak pawòl ki soti nan bouch Bondye", "Soti nan bon manje sèlman", "Soti nan fòs kò a"], correct: 0 },
+                    { q: "Kisa Mak 4:8 di sou grenn ki tonbe nan bon tè?", opts: ["Li bay fwi ki pouse epi ki rapòte", "Li fennen tousuit", "Zwazo manje l tousuit"], correct: 0 },
+                    { q: "Kisa Lik 8:15 di sou bon tè a nan parabòl la?", opts: ["Moun ki tande pawòl la ak yon kè bon epi ki kenbe l", "Moun ki bliye pawòl la tousuit", "Moun ki rejte verite a"], correct: 0 },
+                    { q: "Kisa Jan 6:35 di sou Jezi li menm?", opts: ["Se li ki pen lavi a", "Se li ki yon pwofèt sèlman", "Se yon gid politik"], correct: 0 },
+                    { q: "Kisa Matye 10:42 di sou moun ki bay yon ti tas dlo fre?", opts: ["Pap pèdi rekonpans li", "L ap peye gwo amann", "Pa gen okenn valè"], correct: 0 },
+                    { q: "Kisa Jan 10:10 di sou vizyon Jezi pou nou?", opts: ["Pou nou gen lavi an abondans", "Pou nou soufri tout lavi nou", "Pou nou pèdi tout byennèt"], correct: 0 }
+                ]
+            },
+            4: {
+                title: "Leson 4: Fòtèf la",
+                questions: [
+                    { q: "Kisa Matye 16:18 di sou legliz la ak pòt kote mò yo ye a?", opts: ["Pòt kote mò yo ye a pap kapab soumèt li", "Legliz la ap kraze fasil", "Lènmi yo ap detwi l nan yon jou"], correct: 0 },
+                    { q: "Kisa Mak 3:27 di sou mare yon nèg vanyan anvan?", opts: ["Fòk ou mare l anvan pou ou ka piye kay li", "Ou pa ka venk li okenn fwa", "Kite l fè sa l vle"], correct: 0 },
+                    { q: "Kisa Lik 11:22 di sou moun ki pi fò pase nèg vanyan an?", opts: ["L ap wete tout zam li t ap konte sou yo", "L ap kite l pran tout bagay", "L ap vin zanmi l"], correct: 0 },
+                    { q: "Kisa Matye 12:30 di sou moun ki pa avèk Jezi?", opts: ["Li kont li", "Li nan mitan", "Li pa enpòtan"], correct: 0 },
+                    { q: "Kisa Jan 16:33 di sou triyonf la nan monn nan?", opts: ["Nan monn nan nou gen tribilasyon, men pran kouraj, mwen venk monn nan", "Nou pap janm gen pwoblèm", "Monn nan ap domine nou"], correct: 0 },
+                    { q: "Kisa Matye 10:28 di sou kiyès pou nou krenn tout bon vre?", opts: ["Krenn moun ki ka detwi kò a sèlman", "Krenn moun ki kapab detwi ni nanm ni kò nan lanfè", "Pa krenn pèsonn nèt"], correct: 1 },
+                    { q: "Kisa Lik 10:19 di sou pouvwa lènmi an?", opts: ["Mwen ba nou pouvwa pou marché sou tout fòs lènmi an", "Lènmi an gen plis pouvwa pase nou", "Nou dwe kouri pou lènmi an"], correct: 0 },
+                    { q: "Kisa Mak 16:17 di sou siy ki pral akonpaye moun ki kwè?", opts: ["Y ap chase demon nan non Jezi", "Y ap viv nan richès materyèl", "Y ap vin chèf politik"], correct: 0 },
+                    { q: "Kisa Matye 7:24 di sou moun ki tande pawòl li epi ki fè l?", opts: ["Tankou yon nonm ki bati kay li sou wòch", "Tankou yon moun ki bati sou sab", "Tankou yon moun ki san kay"], correct: 0 },
+                    { q: "Kisa Jan 8:32 di sou verite a?", opts: ["Verite a ap afebli ou", "Verite a ap libere ou", "Verite a kache pou tout tan"], correct: 1 }
+                ]
+            },
+            5: {
+                title: "Leson 5: Dife Lespri",
+                questions: [
+                    { q: "Kisa Matye 3:11 di sou batèm ki pral vini an?", opts: ["L ap batize nou ak Lespri Sen ak ak dife", "L ap batize ak dlo sèlman", "L ap sèvi ak lajan"], correct: 0 },
+                    { q: "Kisa Lik 12:49 di sou dife Jezi vin pote sou tè a?", opts: ["Mwen vin mete yon dife sou tè a, e mwen ta renmen si l te deja limen!", "Mwen vin mete lapè ki pa janm gen konfli", "Mwen pa pote anyen nouvo"], correct: 0 },
+                    { q: "Kisa Jan 14:16 di sou konsolatè Papa a pral voye a?", opts: ["Yon lòt Konsolatè pou l rete avèk nou pou tout tan", "Yon gid ki pral ale apre yon mwa", "Yon fòs ki la pou yon epòk"], correct: 0 },
+                    { q: "Kisa Jan 16:13 di sou Lespri verite a lè l vini?", opts: ["L ap gide nou nan tout verite a", "L ap kache verite a pou ou", "L ap kite nou san direksyon"], correct: 0 },
+                    { q: "Kisa Matye 10:20 di sou kiyès k ap pale nan nou lè nou nan tribilasyon?", opts: ["Se pa nou menm k ap pale, men se Lespri Papa nou an k ap pale nan nou", "Se pwòp konpreyansyon nou", "Se lidè politik yo"], correct: 0 },
+                    { q: "Kisa Lik 24:49 di pou nou fè anvan nou preche?", opts: ["Rete nan lavil la jiskaske nou abiye ak pouvwa ki soti anwo a", "Kouri ale nan lòt nasyon tousuit", "Kòmanse travay la ak pwòp fòs nou"], correct: 0 },
+                    { q: "Kisa Mak 13:11 di sou pawòl pou nou di lè yo tòtire nou?", opts: ["Se pa nou k ap pale, men se Lespri Sen an", "Chache manti pou sove tèt nou", "Rete toujou san nou pa pale"], correct: 0 },
+                    { q: "Kisa Jan 7:39 di sou Lespri a ki pat ko bay nan moman an?", opts: ["Paske Jezi pat ko bèl (glorifye)", "Paske moun yo pat merite l", "Paske syèl la te fèmen"], correct: 0 },
+                    { q: "Kisa Matye 12:28 di sou chase demon pa Lespri Bondye?", opts: ["Wayòm Bondye a rive sou nou vre", "Se pa yon gwo bagay", "Se fòs lèzòm"], correct: 0 },
+                    { q: "Kisa Lik 11:13 di sou Papa a k ap bay Lespri Sen an?", opts: ["Papa a bay Lespri Sen an bay moun ki mande l li", "Papa a pa bay moun ki mande l", "Se sèlman pou kèk moun espesyal"], correct: 0 }
+                ]
+            },
+            6: {
+                title: "Leson 6: Rekòt la",
+                questions: [
+                    { q: "Kisa Matye 9:37 di sou rekòt la ak travayè yo?", opts: ["Rekòt la anpil, men travayè yo pa anpil", "Travayè yo anpil men pa gen rekòt", "Tout moun nan jaden an deja"], correct: 0 },
+                    { q: "Kisa Jan 4:35 di sou je nou lè n ap gade jaden yo?", opts: ["Leve je nou gade jaden yo, yo blan deja pou rekòt la", "Fèmen je nou pou nou pa wè travay la", "Tann anpil ane anvan n rekòlte"], correct: 0 },
+                    { q: "Kisa Matye 13:30 di sou ble a ak raje a nan fen an?", opts: ["Rasanble raje yo an premye pou boule yo, mete ble a nan depo m", "Jete tou de nan lanmè", "Kite yo melanje pou tout tan"], correct: 0 },
+                    { q: "Kisa Lik 10:2 di sou priye mèt rekòt la?", opts: ["Pedi mèt rekòt la voye travayè nan rekòt li a", "Pa bezwen mande pèsonn anyen", "Atann ke travayè yo vini pou kont yo"], correct: 0 },
+                    { q: "Kisa Mark 4:26 di sou fason Wayòm Bondye a tankou yon grenn nan tè?", opts: ["Tankou yon nonm ki simen grenn nan tè, lannwit kou lajounen l ap pouse", "Tankou yon gwo machin ki fè bri", "Tankou yon mirak ki sispann"], correct: 0 },
+                    { q: "Kisa Jan 12:24 di sou grenn ble a ki tonbe nan tè a?", opts: ["Si l pa mouri, li rete pou kont li; men si l mouri, li bay anpil fwi", "Si l tonbe nan tè li mouri nèt", "Li pa janm bay anyen"], correct: 0 },
+                    { q: "Kisa Matye 28:19 di sou misyon an nan tout nasyon?", opts: ["Fè tout nasyon tounen disip, batize yo", "Rete nan yon sèl kote", "Pale sèlman ak moun ki nan fanmi w"], correct: 0 },
+                    { q: "Kisa Mark 16:15 di sou ale nan tout monn nan?", opts: ["Al anonse bòn nouvèl la bay tout kreyati", "Kache nan yon kote ki an sekirite", "Pale sèlman ak chèf yo"], correct: 0 },
+                    { q: "Kisa Lik 9:2 di sou voye yo preche Wayòm nan?", opts: ["Li voye yo preche Wayòm nan epi pou geri malad yo", "Li voye yo rasanble lajan", "Li voye yo bati kay"], correct: 0 },
+                    { q: "Kisa Jan 15:16 di sou chwazi nou pou nou pote fwi?", opts: ["Mwen te chwazi nou pou n ale pote fwi, epi pou fwi nou an rete", "Mwen te chwazi nou pou n chita alèz", "Nou pa bezwen pote fwi"], correct: 0 }
+                ]
+            },
+            7: {
+                title: "Leson 7: Kote Pèmanan",
+                questions: [
+                    { q: "Kisa Jan 14:2 di sou kay Papa a?", opts: ["Gen anpil kay nan kay Papa m... Mwen pral pare yon plas pou nou", "Pa gen plas pou pèsonn", "Se yon kote tanporè sèlman"], correct: 0 },
+                    { q: "Kisa Matye 6:20 di sou anpile trezò?", opts: ["Anpile trezò nan syèl la kote vè ak rouye pa detwi yo", "Anpile trezò sou tè a kote yo toujou an sekirite", "Pa janm fè efò pou lavni"], correct: 0 },
+                    { q: "Kisa Lik 12:33 di sou bous ki pa janm vye?", opts: ["Fè bous ki pa vye pou nou, yon trezò ki p'ap janm fini nan syèl la", "Kenbe tout lajan ou nan bank sou tè a", "Kache lajan nan bwat an bwa"], correct: 0 },
+                    { q: "Kisa Jan 15:4 di sou rete nan Jezi a?", opts: ["Rete nan mwen, epi m ap rete nan nou", "Ale lwen pou n ka gen siksè", "Vivre jan nou pito"], correct: 0 },
+                    { q: "Kisa Matye 25:34 di wa a pral di moun ki beni yo?", opts: ["Vini, nou menm Papa m beni, erite Wayòm ki te pare pou nou", "Ale nan dife ki te prepare pou nou", "Rete deyò pòtay la"], correct: 0 },
+                    { q: "Kisa Lik 16:9 di sou fè zanmi ak richès enjis la?", opts: ["Pou lè l manke nou, yo ka resevwa nou nan kay ki la pou tout tan", "Pou nou vin pi rich sou tè a", "Pou nou achte tè nan monn nan"], correct: 0 },
+                    { q: "Kisa Mark 10:30 di moun ki kite tou sa pou non Jezi?", opts: ["L ap resevwa san fwa tèl nan tan sa a ak lavi etènèl nan syèl la", "L ap pèdi tou sa l te genyen nèt", "L ap viv nan povrete pou tout tan"], correct: 0 },
+                    { q: "Kisa Jan 17:24 di sou volonte Jezi pou nou?", opts: ["Papa, mwen vle pou kote m ye a, moun ou ban mwen yo ka avèk mwen tou", "Mwen vle pou yo rete lwen mwen", "Mwen vle pou yo bliye mwen"], correct: 0 },
+                    { q: "Kisa Matye 19:29 di sou moun ki kite kay ak frè pou non l?", opts: ["L ap resevwa anpil fwa plis epi l ap eritye lavi etènèl", "L ap rete san fanmi pou tout tan", "L ap viv nan solitid"], correct: 0 },
+                    { q: "Kisa Lik 23:43 di Jezi ak mesye ki te sou kwa a?", opts: ["Jòdi a menm w ap avèk mwen nan paradi", "W ap tann anpil syèk anvan w antre", "Pa gen espwa pou ou"], correct: 0 }
+                ]
+            },
+            8: {
+                title: "Leson 8: Limyè Monn",
+                questions: [
+                    { q: "Kisa Matye 5:14 di sou disip yo nan monn nan?", opts: ["Se nou ki limyè monn nan", "Se nou ki fènwa monn nan", "Nou pa gen okenn enpòtans"], correct: 0 },
+                    { q: "Kisa Jan 8:12 di sou kiyès ki limyè monn nan an premye?", opts: ["Mwen se limyè monn nan; moun ki swiv mwen p'ap janm mache nan fènwa", "Nenpòt moun ka limyè pou tèt pa l", "Solèy la se sèl limyè ou bezwen"], correct: 0 },
+                    { q: "Kisa Lik 11:33 di sou moun ki limen yon lanp?", opts: ["Pèsonn pa mete l anba rich, men sou yon gwo etajè", "Pèsonn pa wè l", "Yo koupe l tousuit"], correct: 0 },
+                    { q: "Kisa Matye 5:16 di sou limyè nou an devan moun?", opts: ["Se pou limyè nou klere devan moun, pou yo wè bon zèv nou", "Kache limyè nou pou yo pa wè l", "Pataje l sèlman an kachèt"], correct: 0 },
+                    { q: "Kisa Mark 4:21 di sou pote yon lanp nan kay la?", opts: ["Eski yo pote lanp lan pou mete l anba ban oswa anba kabann?", "Wi, se pou sa l fèt", "Pa janm limen lanp nan kay"], correct: 0 },
+                    { q: "Kisa Jan 12:36 di sou kwè nan limyè a?", opts: ["Mache pandan ou gen limyè a, pou fènwa pa pran ou", "Rete nan fènwa pou w repoze", "Kouri lwen limyè a"], correct: 0 },
+                    { q: "Kisa Matye 6:22 di sou je a ki se lanp kò a?", opts: ["Si je ou an bon, tout kò ou ap plen limyè", "Je a pa gen anyen pou wè ak lavi a", "Je a dwe fèmen pou tout tan"], correct: 0 },
+                    { q: "Kisa Lik 8:16 di sou kouvri yon lanp ak yon veso?", opts: ["Pèsonn pa kouvri yon lanp ak yon veso ni mete l anba kabann", "Se sa pou tout moun fè", "Lanse l nan dife"], correct: 0 },
+                    { q: "Kisa Jan 9:5 di Jezi pandan li te nan monn nan?", opts: ["Pandan m nan monn nan, mwen se limyè monn nan", "Monn nan pa gen okenn limyè", "Nou sèl limyè a nèt"], correct: 0 },
+                    { q: "Kisa Matye 5:15 di sou moun ki limen yon lanp?", opts: ["Yo mete l sou gwo etajè pou l klere tout moun ki nan kay la", "Yo mete l deyò nan lapli a", "Yo kraze l tousuit"], correct: 0 }
+                ]
+            },
+            9: {
+                title: "Leson 9: Ankè Lafwa",
+                questions: [
+                    { q: "Kisa Matye 24:13 di sou moun ki va kenbe fèm jiska lafen?", opts: ["Se li menm ki va sove", "Se li menm ki va pèdi", "L ap jwenn anpil ri sou tè a"], correct: 0 },
+                    { q: "Kisa Mark 13:13 di sou moun ki kanpe fèm jouk lafen?", opts: ["Se li menm ki va sove", "L ap gen tout richès monn nan", "L ap pase nan tout kalite soufrans san sekou"], correct: 0 },
+                    { q: "Kisa Lik 21:19 di sou pasyans nou?", opts: ["Se ak pasyans nou va sove nanm nou", "Se ak lajan nou va sove", "Se ak fòs kò nou va sove"], correct: 0 },
+                    { q: "Kisa Jan 15:9 di sou rete nan lanmou Jezi?", opts: ["Kòm Papa a renmen m, mwen renmen nou tou; rete nan lanmou mwen", "Ale lwen lanmou mwen", "Pataje l ak moun ki rich sèlman"], correct: 0 },
+                    { q: "Kisa Matye 10:22 di sou kiyès ki va sove?", opts: ["Moun ki va kanpe fèm jouk lafen an", "Moun ki chanje lide pi vit", "Moun ki kouri pou chak batay"], correct: 0 },
+                    { q: "Kisa Mark 8:35 di sou moun ki vle sove lavi l?", opts: ["Moun ki vle sove lavi l ap pèdi l, men moun ki pèdi l pou mwen va sove l", "L ap viv pou tout tan sou tè a", "L ap vin chèf nan monn nan"], correct: 0 },
+                    { q: "Kisa Lik 9:23 di sou moun ki vle vin jwenn Jezi?", opts: ["Se pou l renonse a tèt li, pran kwa l chak jou, epi swiv mwen", "Se pou l chache richès an premye", "Se pou l viv jan l vle"], correct: 0 },
+                    { q: "Kisa Jan 8:31 di sou disip tout bon yo?", opts: ["Si nou demeurre nan pawòl mwen, nou se disip mwen tout bon vre", "Si nou viv jan monn nan mande nou", "Si nou pale sèlman nan jou fèt"], correct: 0 },
+                    { q: "Kisa Matye 7:13 di sou pòt la ki etwat?", opts: ["Antre nan pòt ki etwat la, paske pòt ki laj la mennen nan destriksyon", "Antre nan pòt laj la ki pi fasil", "Pa gen okenn pòt pou antre"], correct: 0 },
+                    { q: "Kisa Lik 13:24 di sou fè efò pou antre nan pòt etwat la?", opts: ["Fè gwo efò pou nou antre nan pòt etwat la", "Rete tann san efò", "Pòt la ap louvri pou tout moun otomatikman"], correct: 0 }
+                ]
+            },
+            10: {
+                title: "Leson 10: Gran Palè",
+                questions: [
+                    { q: "Kisa Matye 25:21 di sèvitè ki te fidèl la?", opts: ["Bravo, bon sèvitè ki fidèl... antre nan lajwa mèt ou!", "Ale travay pi di ankò san repo", "Ou pa fè gwo bagay"], correct: 0 },
+                    { q: "Kisa Lik 19:17 di sèvitè ki te jere byen an?", opts: ["Bravo bon sèvitè, ou te fidèl nan ti kras, pran otorite sou dis vil", "Ou pèdi tout byennèt ou", "Rete nan menm nivo a"], correct: 0 },
+                    { q: "Kisa Jan 12:26 di sou kote Jezi ye?", opts: ["Kote m ye a, se la sèvitè m nan va ye tou", "Sèvitè m nan rete lwen mwen", "Sèvitè m nan pa ka vin kote m ye"], correct: 0 },
+                    { q: "Kisa Matye 13:43 di sou moun ki jis yo nan Wayòm Papa yo?", opts: ["Y ap klere tankou solèy nan Wayòm Papa yo", "Y ap viv nan fènwa", "Y ap disparèt nan mitan monn nan"], correct: 0 },
+                    { q: "Kisa Mark 10:29 di sou moun ki kite tout bagay pou levanjil?", opts: ["Pap gen moun ki kite kay ki pap resevwa anpil fwa plis nan tan sa a", "L ap pèdi rekonpans li nèt", "L ap viv nan mizè"], correct: 0 },
+                    { q: "Kisa Lik 12:32 di Papa a vle ba nou?", opts: ["Nou te anvi, nou pa bezwen pè, paske se plezi Papa a pou l ba nou Wayòm nan", "Papa a pa vle ban nou anyen", "Wayòm nan se pou yon ti gwoup sèlman"], correct: 0 },
+                    { q: "Kisa Jan 14:3 di apre Jezi ale prepare plas la?", opts: ["M ap tounen epi m ap pran nou avèk mwen, pou kote m ye a nou ka ye tou", "M ap rete lwen nou pou tout tan", "Nou pral chache l nan yon lòt planèt"], correct: 0 },
+                    { q: "Kisa Matye 24:47 di sou sa mèt la va mete sèvitè fidèl la an chaj?", opts: ["L ap mete l an chaj tout byen l yo", "L ap wete l nan pozisyon l", "L ap ba l yon travay pi difisil"], correct: 0 },
+                    { q: "Kisa Lik 22:29 di sou fason Jezi pase alyans ak nou pou Wayòm nan?", opts: ["M ap pase yon alyans avèk nou pou Wayòm nan, menm jan Papa a te pase l avèk mwen", "Mwen pa gen okenn alyans pou nou", "Se pou nou chache l pa fòs pa nou"], correct: 0 },
+                    { q: "Kisa Matye 25:46 di sou ale nan lavi etènèl la?", opts: ["Moun ki jis yo pral antre nan lavi etènèl", "Tout moun pral menm jan nan dife", "Lavi etènèl la se yon mit"], correct: 0 }
+                ]
+            }
+        };
+
+        // LOGIN & LOGOUT FUNCTIONS
+        function handleLogin() {
+            const input = document.getElementById('username-input');
+            const name = input.value.trim();
+            if(name === "") {
+                alert("Tanpri antre non ou anvan ou kontinye!");
+                return;
+            }
+            currentUsername = name;
+            document.getElementById('display-username').innerText = currentUsername;
+            document.getElementById('login-screen').classList.add('hidden');
+            showToast(`Byenveni ankò nan Wayòm nan, ${currentUsername}! 🔥`);
+        }
+
+        function handleLogout() {
+            document.getElementById('username-input').value = "";
+            document.getElementById('login-screen').classList.remove('hidden');
+        }
+
+        function openLesson(nodeId) {
+            if(nodeId > maxUnlockedNode) {
+                showToast(`🔒 Teritè sa a bloke, ${currentUsername}. Fini nivo anvan yo!`);
+                return;
+            }
+            if(currentHearts <= 0) {
+                openShopModal();
+                showToast(`❤️ Ou pa gen kè ankò, ${currentUsername}! Achte kè.`);
+                return;
+            }
+            activeNodeId = nodeId;
+            const lesson = lessonsData[nodeId];
+            document.getElementById('modal-title').innerText = lesson.title;
+
+            showLevelMenu();
+
+            const modal = document.getElementById('lesson-modal');
+            const content = document.getElementById('modal-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('translate-y-full');
+            }, 10);
+        }
+
+        function showLevelMenu() {
+            document.getElementById('level-menu-screen').classList.remove('hidden');
+            document.getElementById('quiz-container').classList.add('hidden');
+            document.getElementById('result-feedback').classList.add('hidden');
+            document.getElementById('back-menu-btn').classList.add('hidden');
+        }
+
+        function selectDifficulty(diff) {
+            selectedDiff = diff;
+            currentQuestionIdx = 0;
+            document.getElementById('diff-badge').innerText = `Nivo: ${diff.toUpperCase()}`;
+            
+            document.getElementById('level-menu-screen').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('hidden');
+            document.getElementById('back-menu-btn').classList.remove('hidden');
+
+            loadCurrentQuestion();
+        }
+
+        function returnToMenu() {
+            showLevelMenu();
+        }
+
+        function loadCurrentQuestion() {
+            const lesson = lessonsData[activeNodeId];
+            const qData = lesson.questions[currentQuestionIdx];
+
+            document.getElementById('quiz-counter').innerText = `Kesyon ${currentQuestionIdx + 1}/10`;
+            document.getElementById('quiz-question').innerText = qData.q;
+
+            const optionsEl = document.getElementById('options-list');
+            optionsEl.innerHTML = '';
+
+            qData.opts.forEach((optText, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-2xl border border-stone-700 bg-stone-800/50 hover:border-amber-500 hover:bg-stone-800 font-bold text-stone-200 transition-all shadow-sm flex items-center justify-between";
+                btn.innerHTML = `<span>${optText}</span> <span class="w-5 h-5 rounded-full border border-stone-600 flex items-center justify-center text-xs"></span>`;
+                btn.onclick = () => checkAnswer(idx === qData.correct, btn);
+                optionsEl.appendChild(btn);
+            });
+
+            document.getElementById('result-feedback').classList.add('hidden');
+        }
+
+        function closeLesson() {
+            const modal = document.getElementById('lesson-modal');
+            const content = document.getElementById('modal-content');
+            content.classList.add('translate-y-full');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function checkAnswer(isCorrect, buttonElement) {
+            const allButtons = document.querySelectorAll('#options-list button');
+            allButtons.forEach(b => b.disabled = true);
+
+            const feedbackEl = document.getElementById('result-feedback');
+            const feedbackCard = document.getElementById('feedback-card');
+            const feedbackIcon = document.getElementById('feedback-icon');
+            const feedbackTitle = document.getElementById('feedback-title');
+            const feedbackText = document.getElementById('feedback-text');
+            const nextBtn = document.getElementById('next-q-btn');
+
+            let xpBonus = 20;
+            let gemBonus = 5;
+            if(selectedDiff === 'difikil') { xpBonus = 35; gemBonus = 10; }
+            if(selectedDiff === 'jeni') { xpBonus = 50; gemBonus = 15; }
+
+            if(isCorrect) {
+                buttonElement.classList.add('bg-emerald-950/80', 'border-emerald-500', 'text-emerald-300');
+                
+                const encFn = duoEncouragements[Math.floor(Math.random() * duoEncouragements.length)];
+                const enc = encFn(currentUsername);
+                feedbackIcon.innerText = enc.icon;
+                feedbackTitle.innerText = enc.title;
+                feedbackText.innerText = `${enc.text} (+${xpBonus} XP, +${gemBonus} 💎)`;
+                
+                feedbackCard.className = "p-4 rounded-2xl mb-4 flex items-center space-x-3 bg-emerald-950 border border-emerald-600/50 text-emerald-200";
+                nextBtn.className = "w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-stone-950 font-black rounded-2xl shadow-lg border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1 transition-all";
+
+                currentXP += xpBonus;
+                currentGems += gemBonus;
+                document.getElementById('xp-count').innerText = currentXP;
+                document.getElementById('gems-count').innerText = currentGems;
+            } else {
+                buttonElement.classList.add('bg-red-950/80', 'border-red-500', 'text-red-300');
+                
+                const mistFn = duoMistakes[Math.floor(Math.random() * duoMistakes.length)];
+                const mist = mistFn(currentUsername);
+                feedbackIcon.innerText = mist.icon;
+                feedbackTitle.innerText = mist.title;
+                feedbackText.innerText = `${mist.text} (Ou pèdi 1 Kè ❤️)`;
+
+                feedbackCard.className = "p-4 rounded-2xl mb-4 flex items-center space-x-3 bg-red-950 border border-red-600/50 text-red-200";
+                nextBtn.className = "w-full py-3 bg-red-500 hover:bg-red-600 text-stone-950 font-black rounded-2xl shadow-lg border-b-4 border-red-700 active:border-b-0 active:translate-y-1 transition-all";
+
+                currentHearts = Math.max(0, currentHearts - 1);
+                updateHeartsDisplay();
+
+                if(currentHearts <= 0) {
+                    setTimeout(() => {
+                        closeLesson();
+                        openShopModal();
+                    }, 1500);
+                }
+            }
+
+            if (currentQuestionIdx >= 9) {
+                nextBtn.innerText = "Fini Leson an 🎉";
+            } else {
+                nextBtn.innerText = "Kontinye →";
+            }
+
+            feedbackEl.classList.remove('hidden');
+        }
+
+        function nextQuestionStep() {
+            currentQuestionIdx++;
+            if(currentQuestionIdx < 10) {
+                loadCurrentQuestion();
+            } else {
+                if(activeNodeId === maxUnlockedNode && maxUnlockedNode < 10) {
+                    maxUnlockedNode++;
+                    unlockNodeButton(maxUnlockedNode);
+                }
+                closeLesson();
+                showToast(`🎉 Felisitasyon ${currentUsername}! Ou fini leson an ak siksè!`);
+                currentStreak++;
+                document.getElementById('streak-count').innerText = currentStreak;
+            }
+        }
+
+        function unlockNodeButton(nodeId) {
+            const mainContainer = document.querySelector('main');
+            const buttons = mainContainer.querySelectorAll('button');
+            buttons.forEach(btn => {
+                if(btn.innerText.includes(`${nodeId}.`) || btn.innerHTML.includes(`${nodeId}.`)) {
+                    btn.classList.remove('locked', 'bg-stone-800', 'border-stone-900', 'text-stone-500', 'cursor-not-allowed');
+                    btn.classList.add('bg-emerald-600', 'border-emerald-800', 'text-white', 'cursor-pointer');
+                    btn.querySelector('span:not(.absolute)').innerText = "🌟";
+                }
+            });
+        }
+
+        function updateHeartsDisplay() {
+            let heartsStr = "";
+            for(let i=0; i<3; i++) {
+                heartsStr += (i < currentHearts) ? "❤️" : "🤍";
+            }
+            document.getElementById('hearts-container').innerText = heartsStr;
+        }
+
+        function openShopModal() {
+            document.getElementById('shop-modal').classList.remove('hidden');
+        }
+
+        function closeShopModal() {
+            document.getElementById('shop-modal').classList.add('hidden');
+        }
+
+        function buyHearts() {
+            if(currentGems >= 50) {
+                currentGems -= 50;
+                currentHearts = 3;
+                document.getElementById('gems-count').innerText = currentGems;
+                updateHeartsDisplay();
+                closeShopModal();
+                showToast(`🎉 Bravo ${currentUsername}! Ou achte kè yo ak siksè.`);
+            } else {
+                showToast(`💎 ${currentUsername}, ou pa gen ase pyès monè!`);
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = "fixed top-20 left-1/2 transform -translate-x-1/2 bg-stone-900 border border-amber-500/50 text-amber-200 px-6 py-3 rounded-2xl shadow-2xl font-bold z-50 text-xs sm:text-sm animate-bounce text-center";
+            toast.innerText = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
